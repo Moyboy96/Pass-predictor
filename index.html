@@ -292,6 +292,8 @@
       </div>
       <div class="actions">
         <button class="primary" id="run">Compute passes</button>
+        <button class="ghost" id="pick">Load TLE file</button>
+        <input type="file" id="file" accept=".txt,.tle,.3le,.2le,text/plain" hidden>
         <button class="ghost" id="locate">Use my location</button>
         <label class="toggle"><input type="checkbox" id="utc"> UTC</label>
       </div>
@@ -323,7 +325,7 @@
   var els = {
     tle: $('tle'), satPick: $('satPick'), satPickWrap: $('satPickWrap'),
     lat: $('lat'), lon: $('lon'), alt: $('alt'), minEl: $('minEl'), hours: $('hours'),
-    utc: $('utc'), run: $('run'), locate: $('locate'), msg: $('msg'), passes: $('passes'),
+    utc: $('utc'), run: $('run'), locate: $('locate'), pick: $('pick'), file: $('file'), msg: $('msg'), passes: $('passes'),
     hero: $('hero'), heroName: $('heroName'), heroAge: $('heroAge'), heroLead: $('heroLead'),
     heroBig: $('heroBig'), heroDetail: $('heroDetail'), heroNow: $('heroNow'),
     nowAz: $('nowAz'), nowEl: $('nowEl'), nowRange: $('nowRange'), nowSub: $('nowSub'),
@@ -678,6 +680,26 @@
     els.tzLabel.textContent = tzName();
     save(); renderPasses(); renderHero();
     if (state.satrec) setMsg('Times in ' + tzName() + '.');
+  });
+  els.pick.addEventListener('click', function () { els.file.value = ''; els.file.click(); });
+  els.file.addEventListener('change', function () {
+    var f = els.file.files && els.file.files[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { setMsg('That file is over 2 MB. Trim it to the satellites you need.', true); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || '');
+      var sets = parseTles(text);
+      if (!sets.length) { setMsg('No TLE sets found in ' + f.name + '.', true); return; }
+      els.tle.value = text;
+      els.satPick.value = '';
+      syncSatPicker();
+      setMsg('Loaded ' + sets.length + (sets.length === 1 ? ' satellite' : ' satellites') + ' from ' + f.name + (sets.length > 1 ? '. Pick one, then compute.' : '.'));
+      els.setup.open = true;
+      if (sets.length > 1) els.satPick.focus();
+    };
+    reader.onerror = function () { setMsg('Could not read ' + f.name + '.', true); };
+    reader.readAsText(f);
   });
   els.locate.addEventListener('click', function () {
     if (!navigator.geolocation) { setMsg('Location is not available in this browser. Enter coordinates by hand.', true); return; }
