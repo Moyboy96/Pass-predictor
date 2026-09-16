@@ -293,11 +293,13 @@
       <div class="actions">
         <button class="primary" id="run">Compute passes</button>
         <button class="ghost" id="pick">Load TLE file</button>
+        <button class="ghost" id="share">Share link</button>
         <input type="file" id="file" accept=".txt,.tle,.3le,.2le,text/plain" hidden>
         <button class="ghost" id="locate">Use my location</button>
         <label class="toggle"><input type="checkbox" id="utc"> UTC</label>
       </div>
       <p class="msg" id="msg"></p>
+      <label class="field" id="linkWrap" hidden><span>Link that opens this satellite and location</span><input type="text" id="linkOut" readonly></label>
     </div>
   </details>
 
@@ -325,7 +327,7 @@
   var els = {
     tle: $('tle'), satPick: $('satPick'), satPickWrap: $('satPickWrap'),
     lat: $('lat'), lon: $('lon'), alt: $('alt'), minEl: $('minEl'), hours: $('hours'),
-    utc: $('utc'), run: $('run'), locate: $('locate'), pick: $('pick'), file: $('file'), msg: $('msg'), passes: $('passes'),
+    utc: $('utc'), run: $('run'), locate: $('locate'), pick: $('pick'), file: $('file'), share: $('share'), linkWrap: $('linkWrap'), linkOut: $('linkOut'), msg: $('msg'), passes: $('passes'),
     hero: $('hero'), heroName: $('heroName'), heroAge: $('heroAge'), heroLead: $('heroLead'),
     heroBig: $('heroBig'), heroDetail: $('heroDetail'), heroNow: $('heroNow'),
     nowAz: $('nowAz'), nowEl: $('nowEl'), nowRange: $('nowRange'), nowSub: $('nowSub'),
@@ -701,6 +703,55 @@
     reader.onerror = function () { setMsg('Could not read ' + f.name + '.', true); };
     reader.readAsText(f);
   });
+  function buildLink() {
+    var base = location.href.split('#')[0].split('?')[0];
+    var q = [];
+    var sets = parseTles(els.tle.value);
+    var set = sets[Number(els.satPick.value) || 0] || sets[0];
+    if (!set) return null;
+    q.push('tle=' + encodeURIComponent(set.name + '\n' + set.l1 + '\n' + set.l2));
+    if (els.lat.value !== '' && els.lon.value !== '') {
+      q.push('lat=' + encodeURIComponent(els.lat.value));
+      q.push('lon=' + encodeURIComponent(els.lon.value));
+      if (els.alt.value !== '') q.push('alt=' + encodeURIComponent(els.alt.value));
+    }
+    q.push('minel=' + encodeURIComponent(els.minEl.value));
+    return base + '#' + q.join('&');
+  }
+  els.share.addEventListener('click', function () {
+    var link = buildLink();
+    if (!link) { setMsg('Paste or load a TLE first, then share.', true); return; }
+    els.linkOut.value = link; els.linkWrap.hidden = false;
+    var done = function () { setMsg('Link ready. Email it to yourself; opening it loads this satellite.'); };
+    if (navigator.share) {
+      navigator.share({ title: 'Pass Predictor', text: 'TLE link', url: link }).then(done).catch(done);
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(function () { setMsg('Link copied. Email it to yourself; opening it loads this satellite.'); }).catch(done);
+    } else { done(); }
+  });
+  function importFromUrl() {
+    var frag = location.hash.replace(/^#/, '') || location.search.replace(/^\?/, '');
+    if (!frag || frag.indexOf('tle=') < 0) return false;
+    var params = {};
+    frag.split('&').forEach(function (kv) {
+      var i = kv.indexOf('='); if (i < 0) return;
+      try { params[kv.substring(0, i)] = decodeURIComponent(kv.substring(i + 1).replace(/\+/g, ' ')); } catch (e) {}
+    });
+    var text = (params.tle || '').replace(/\r/g, '');
+    if (!parseTles(text).length) { setMsg('The link contained no readable TLE.', true); return false; }
+    els.tle.value = text;
+    if (params.lat != null) els.lat.value = params.lat;
+    if (params.lon != null) els.lon.value = params.lon;
+    if (params.alt != null) els.alt.value = params.alt;
+    if (params.minel != null) els.minEl.value = params.minel;
+    els.satPick.value = '';
+    syncSatPicker();
+    save();
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    if (els.lat.value !== '' && els.lon.value !== '') compute();
+    else { setMsg('TLE loaded from link. Enter your location and compute.'); els.setup.open = true; }
+    return true;
+  }
   els.locate.addEventListener('click', function () {
     if (!navigator.geolocation) { setMsg('Location is not available in this browser. Enter coordinates by hand.', true); return; }
     setMsg('Getting location…');
@@ -735,6 +786,11 @@
   /* ---------- init ---------- */
   els.tzLabel.textContent = tzName();
   var saved = load();
+  if (saved) {
+    els.utc.checked = !!saved.utc;
+    if (saved.lat) els.lat.value = saved.lat; if (saved.lon) els.lon.value = saved.lon; if (saved.alt) els.alt.value = saved.alt;
+  }
+  if (importFromUrl()) saved = null;
   if (saved) {
     els.tle.value = saved.tle || '';
     els.lat.value = saved.lat || ''; els.lon.value = saved.lon || ''; els.alt.value = saved.alt || '';
