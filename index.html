@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pass Predictor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Passes">
+<meta name="theme-color" content="#0E7C86">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Pass predictor</h1>
+    <span class="tz" id="tzLabel"></span>
+  </div>
+
+  <div class="libbar">
+    <select id="lib" aria-label="Satellite"><option value="">No satellites saved yet</option></select>
+  </div>
+
+  <section class="card hero empty" id="hero">
+    <p class="sat"><span id="heroName">No satellite loaded</span><span class="age" id="heroAge"></span></p>
+    <p class="lead" id="heroLead">Paste a TLE and set your location below.</p>
+    <p class="big" id="heroBig"></p>
+    <p class="detail" id="heroDetail"></p>
+    <div class="now" id="heroNow" hidden>
+      <div><span>Azimuth</span><b id="nowAz">–</b></div>
+      <div><span>Elevation</span><b id="nowEl">–</b></div>
+      <div><span>Range</span><b id="nowRange">–</b></div>
+      <div><span>Sub-point</span><b id="nowSub">–</b></div>
+    </div>
+    <div class="heroplot" id="heroPlot" hidden>
+      <div id="heroSvg"></div>
+      <div class="side" id="heroSide"></div>
+    </div>
+  </section>
+
+  <details class="card panel" id="histWrap" hidden>
+    <summary><span>Earlier</span><span class="sum" id="histSum"></span></summary>
+    <div class="panel-body" id="history"></div>
+  </details>
+
+  <details class="card panel" id="setup" open>
+    <summary><span>Satellite and location</span><span class="sum" id="setupSum"></span></summary>
+    <div class="panel-body">
+      <label class="field">
+        <span>Paste TLEs (name line optional, several sets are fine)</span>
+        <textarea id="tle" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="ISS (ZARYA)
+1 25544U 98067A   26259.51782528  .00016717  00000-0  10270-3 0  9002
+2 25544  51.6400 208.9163 0006703 130.5360 325.0288 15.49809224434567"></textarea>
+      </label>
+      <div class="actions">
+        <button class="ghost" id="saveLib">Save to library</button>
+        <button class="ghost" id="pick">Load TLE file</button>
+        <input type="file" id="file" accept=".txt,.tle,.3le,.2le,text/plain" hidden>
+        <button class="ghost danger" id="removeLib">Remove selected</button>
+      </div>
+      <div class="row">
+        <label class="field"><span>Latitude °</span><input type="text" id="lat" autocomplete="off" placeholder="38.8977 or 38.8977N"></label>
+        <label class="field"><span>Longitude °</span><input type="text" id="lon" autocomplete="off" placeholder="-77.0365 or 77.0365W"></label>
+        <label class="field"><span>Altitude m</span><input type="text" id="alt" autocomplete="off" placeholder="0"></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Minimum elevation °</span><input type="text" id="minEl" inputmode="decimal" value="5"></label>
+        <label class="field"><span>Look ahead, hours</span><input type="text" id="hours" inputmode="numeric" value="48"></label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="run">Compute passes</button>
+        <button class="ghost" id="locate">Use my location</button>
+        <button class="ghost" id="share">Share link</button>
+        <label class="toggle"><input type="checkbox" id="utc"> UTC</label>
+      </div>
+      <p class="msg" id="msg"></p>
+      <label class="field" id="linkWrap" hidden><span>Link that opens this satellite and location</span><input type="text" id="linkOut" readonly></label>
+    </div>
+  </details>
+
+  <div class="viewbar" id="viewbar" hidden>
+    <span class="t">Upcoming</span>
+    <div class="seg"><button data-view="list" id="vList" class="on">List</button><button data-view="timeline" id="vTimeline">Timeline</button></div>
+  </div>
+  <section class="passes" id="passes"></section>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="ovhead">
+    <div><b id="ovName"></b><span id="ovTimes"></span></div>
+    <button id="ovClose">Close</button>
+  </div>
+  <div class="ovplot" id="ovPlot"></div>
+  <div class="ovfoot" id="ovFoot"></div>
+</div>
+<script src="vendor/satellite.min.js"></script>
+<script type="module" src="js/main.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
