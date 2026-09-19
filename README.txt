@@ -1,4 +1,4 @@
-Pass Predictor — layout and deployment
+Pass Predictor:
 
 index.html              page markup; loads css/app.css, vendor/satellite.min.js, js/main.js
 css/app.css             all styles, grouped by component; colours only via the tokens at the top
