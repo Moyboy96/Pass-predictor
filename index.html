@@ -81,6 +81,7 @@
       </div>
       <p class="msg" id="msg"></p>
       <label class="field" id="linkWrap" hidden><span>Link that opens this satellite and location</span><input type="text" id="linkOut" readonly></label>
+      <p class="msg" id="build"></p>
     </div>
   </details>
 
@@ -103,8 +104,21 @@
 <script type="module" src="js/main.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
+  const showBuild = () => caches.keys().then((keys) => {
+    const cache = keys.find((key) => key.startsWith('pass-predictor-'));
+    document.getElementById('build').textContent = cache ? `Build ${cache.replace('pass-predictor-', '')}` : '';
+  }).catch(() => {});
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(showBuild).catch(() => {});
+  });
+  // A new worker has taken over: reload once so this launch shows the new files.
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) {
+      return;
+    }
+    reloading = true;
+    location.reload();
   });
 }
 </script>

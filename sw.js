@@ -2,7 +2,7 @@
 // page ships with; bump CACHE whenever any listed file changes so phones
 // pick up the new version on their next online launch.
 
-const CACHE = 'pass-predictor-v12';
+const CACHE = 'pass-predictor-v13';
 const FILES = [
   './',
   './index.html',
@@ -29,10 +29,15 @@ const FILES = [
   './apple-touch-icon.png',
 ];
 
+// cache: 'reload' bypasses the browser's HTTP cache (GitHub Pages marks
+// files fresh for 10 minutes), so a new version never seeds itself with
+// stale copies of the old one.
+const freshRequest = (file) => new Request(file, { cache: 'reload' });
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(FILES))
+      .then((cache) => cache.addAll(FILES.map(freshRequest)))
       .then(() => self.skipWaiting()),
   );
 });
