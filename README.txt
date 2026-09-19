@@ -22,8 +22,3 @@ sw.js                   offline cache; bump CACHE when any listed file changes
 manifest.webmanifest, icon-192.png, icon-512.png, apple-touch-icon.png
 tools/bundle.mjs        builds dist/pass-predictor.html, the single-file build used for the claude.ai artifact
 
-Deploying to GitHub Pages: upload everything except tools/ and dist/, keeping the folder
-structure. To ship an update, replace the changed files and bump CACHE in sw.js so
-installed phones pick it up on their next online launch.
-
-Installing on iPhone: open the Pages URL in Safari, Share -> Add to Home Screen.
